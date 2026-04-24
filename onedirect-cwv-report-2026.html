@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe WPO - Core Web Vitals | Onedirect.es</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+  .header { background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%); border-bottom: 2px solid #e53e3e; padding: 40px; text-align: center; }
+  .header h1 { font-size: 2.4em; color: #fff; margin-bottom: 10px; }
+  .header .subtitle { color: #a0aec0; font-size: 1.1em; }
+  .header .meta { margin-top: 15px; display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+  .header .meta span { background: #2d3748; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; color: #68d391; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+  .section { background: #1a1f2e; border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #2d3748; }
+  .section h2 { font-size: 1.6em; color: #63b3ed; margin-bottom: 20px; border-bottom: 1px solid #2d3748; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .section h3 { font-size: 1.2em; color: #fbd38d; margin: 20px 0 12px; }
+  .section h4 { font-size: 1.0em; color: #b794f4; margin: 15px 0 8px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+  .kpi-card { background: #2d3748; border-radius: 10px; padding: 20px; text-align: center; border: 2px solid transparent; }
+  .kpi-card.bad { border-color: #e53e3e; }
+  .kpi-card.warning { border-color: #ed8936; }
+  .kpi-card.good { border-color: #48bb78; }
+  .kpi-card .metric { font-size: 2.2em; font-weight: 700; margin: 8px 0; }
+  .kpi-card.bad .metric { color: #fc8181; }
+  .kpi-card.warning .metric { color: #fbd38d; }
+  .kpi-card.good .metric { color: #68d391; }
+  .kpi-card .label { font-size: 0.85em; color: #a0aec0; }
+  .kpi-card .sublabel { font-size: 0.75em; color: #718096; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9em; }
+  th { background: #2d3748; color: #a0aec0; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 10px 14px; border-bottom: 1px solid #2d3748; vertical-align: top; }
+  tr:hover td { background: #1e2535; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+  .badge-red { background: #742a2a; color: #fc8181; }
+  .badge-orange { background: #7b341e; color: #fbd38d; }
+  .badge-green { background: #1c4532; color: #68d391; }
+  .badge-blue { background: #1a365d; color: #90cdf4; }
+  .badge-purple { background: #44337a; color: #d6bcfa; }
+  .alert { padding: 15px 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid; }
+  .alert-red { background: #1a0a0a; border-color: #e53e3e; color: #fc8181; }
+  .alert-orange { background: #1a0f00; border-color: #ed8936; color: #fbd38d; }
+  .alert-blue { background: #0a1628; border-color: #3182ce; color: #90cdf4; }
+  .step { display: flex; gap: 15px; margin: 12px 0; padding: 15px; background: #0f1421; border-radius: 8px; border: 1px solid #2d3748; }
+  .step-num { background: #3182ce; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-content { flex: 1; }
+  .step-content strong { color: #90cdf4; display: block; margin-bottom: 5px; }
+  .step-content p { color: #a0aec0; font-size: 0.9em; }
+  code { background: #0f1421; color: #68d391; padding: 2px 6px; border-radius: 3px; font-family: 'Consolas', monospace; font-size: 0.85em; }
+  pre { background: #0a0e17; color: #a8ff78; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.82em; margin: 10px 0; border: 1px solid #2d3748; line-height: 1.4; }
+  .url-pill { font-family: monospace; font-size: 0.78em; background: #0f1421; padding: 2px 7px; border-radius: 3px; color: #76e4f7; word-break: break-all; }
+  .progress-bar { background: #2d3748; border-radius: 4px; height: 8px; margin: 5px 0; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .chart-container { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+  .chart-item { flex: 1; min-width: 220px; }
+  .priority-tag { float: right; font-size: 0.7em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .priority-critical { background: #742a2a; color: #fc8181; }
+  .priority-high { background: #7b341e; color: #fbd38d; }
+  .priority-medium { background: #1a365d; color: #90cdf4; }
+  .summary-box { background: #0f1421; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; margin: 15px 0; }
+  .toc { background: #0f1421; border-radius: 8px; padding: 20px; margin-bottom: 30px; border: 1px solid #2d3748; }
+  .toc h2 { color: #63b3ed; margin-bottom: 15px; font-size: 1.2em; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #76e4f7; text-decoration: none; font-size: 0.9em; }
+  .toc a:hover { color: #b2f5ea; text-decoration: underline; }
+  .footer { text-align: center; padding: 30px; color: #4a5568; font-size: 0.85em; border-top: 1px solid #2d3748; }
+  @media (max-width: 768px) { .kpi-grid { grid-template-columns: 1fr 1fr; } .header h1 { font-size: 1.6em; } }
+</style>
+</head><body>
+<div class="header">
+  <h1>📊 Informe WPO &amp; Core Web Vitals</h1>
+  <div class="subtitle">Análisis completo de rendimiento web · <strong>Onedirect.es</strong></div>
+  <div class="meta">
+    <span>📅 Fecha: 24 Abril 2026</span>
+    <span>🔍 Fuente: Google Search Console + PageSpeed Insights</span>
+    <span>📱 Dispositivo: Móvil (Prioritario)</span>
+    <span>🛒 Plataforma: Magento 2</span>
+  </div>
+</div>
+
+<div class="container">
+<div class="toc">
+  <h2>📋 Índice del Informe</h2>
+  <ol>
+    <li><a href="#resumen">Resumen Ejecutivo</a></li>
+    <li><a href="#cwv-movil">Core Web Vitals Móvil – Resumen GSC</a></li>
+    <li><a href="#tipologias">Análisis por Tipología de Páginas</a></li>
+    <li><a href="#pagespeed">Análisis PageSpeed Insights – URL Más Afectada</a></li>
+    <li><a href="#problemas">Problemas Detectados y Soluciones</a></li>
+    <li><a href="#roadmap">Roadmap de Implementación</a></li>
+  </ol>
+</div>
+
+<!-- RESUMEN EJECUTIVO -->
+<div class="section" id="resumen">
+  <h2>🚨 1. Resumen Ejecutivo</h2>
+  <div class="alert alert-red">
+    <strong>⚠️ Estado Crítico:</strong> El 93.5% de las URLs móviles indexadas tienen un rendimiento MALO en Core Web Vitals. Las 3 métricas principales (LCP, CLS, INP) están en estado crítico, afectando directamente al ranking en Google y a la tasa de conversión.
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card bad">
+      <div class="label">URLs con Rendimiento MALO (Móvil)</div>
+      <div class="metric">3.202</div>
+      <div class="sublabel">3 problemas críticos detectados</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="label">URLs que Necesitan Mejora (Móvil)</div>
+      <div class="metric">22</div>
+      <div class="sublabel">3 problemas detectados</div>
+    </div>
+    <div class="kpi-card good">
+      <div class="label">URLs Buenas (Móvil)</div>
+      <div class="metric">221</div>
+      <div class="sublabel">Solo 6.4% del total</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">Score Rendimiento Móvil (Lab)</div>
+      <div class="metric">25/100</div>
+      <div class="sublabel">URL analizada: /marcas/poly</div>
+    </div>
+  </div>
+  <div class="summary-box">
+    <h4>🎯 Impacto en Negocio</h4>
+    <p style="color:#a0aec0; margin-top:8px;">Según estudios de Google, cada segundo adicional de carga puede reducir las conversiones hasta un <strong style="color:#fc8181">20%</strong>. Con LCP de 4,1-6,3s en móvil, Onedirect.es está perdiendo tanto en rankings orgánicos (CWV es factor de ranking desde 2021) como en conversiones directas.</p>
+  </div>
+</div>
+<!-- CWV MÓVIL -->
+<div class="section" id="cwv-movil">
+  <h2>📱 2. Core Web Vitals Móvil – Google Search Console</h2>
+  <p style="color:#a0aec0; margin-bottom:20px;">Datos extraídos del Informe de Experiencia de Usuario de Chrome (CrUX). Última actualización: 22/04/2026</p>
+  
+  <h3>📊 Distribución de Problemas Móvil</h3>
+  <table>
+    <thead><tr><th>Gravedad</th><th>Problema (Métrica)</th><th>URLs Afectadas</th><th>Valor Umbral</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-red">MALO</span></td><td>CLS &gt; 0,25 (móvil)</td><td><strong style="color:#fc8181">3.180</strong></td><td>CLS &gt; 0,25 → MALO</td><td>No iniciada</td></tr>
+      <tr><td><span class="badge badge-orange">MEJORA</span></td><td>INP &gt; 200ms (móvil)</td><td><strong style="color:#fbd38d">3.082</strong></td><td>INP 200-500ms → Necesita Mejora</td><td>No iniciada</td></tr>
+      <tr><td><span class="badge badge-red">MALO</span></td><td>LCP &gt; 4s (móvil)</td><td><strong style="color:#fc8181">2.997</strong></td><td>LCP &gt; 4s → MALO</td><td>No iniciada</td></tr>
+      <tr><td><span class="badge badge-orange">MEJORA</span></td><td>CLS &gt; 0,1 (móvil)</td><td><strong style="color:#fbd38d">44</strong></td><td>CLS 0,1-0,25 → Necesita Mejora</td><td>No iniciada</td></tr>
+      <tr><td><span class="badge badge-red">MALO</span></td><td>INP &gt; 500ms (móvil)</td><td><strong style="color:#fc8181">22</strong></td><td>INP &gt; 500ms → MALO</td><td>No iniciada</td></tr>
+      <tr><td><span class="badge badge-orange">MEJORA</span></td><td>LCP &gt; 2,5s (móvil)</td><td><strong style="color:#fbd38d">9</strong></td><td>LCP 2,5-4s → Necesita Mejora</td><td>No iniciada</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert alert-orange" style="margin-top:20px;">
+    <strong>📌 Nota importante:</strong> Las métricas CWV en GSC son datos de campo reales (CrUX), basados en usuarios reales de Chrome de los últimos 28 días. Representan la experiencia real de los usuarios, no condiciones de laboratorio.
+  </div>
+</div>
+<!-- TIPOLOGÍAS -->
+<div class="section" id="tipologias">
+  <h2>🗂️ 3. Análisis por Tipología de Páginas</h2>
+  <p style="color:#a0aec0; margin-bottom:20px;">Agrupación de URLs afectadas según el patrón de URL y tipo de página, con los valores CWV específicos para cada grupo.</p>
+
+  <!-- PÁGINAS DE PRODUCTO -->
+  <h3>🛍️ A. Páginas de Producto (<code>/productos/</code>)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO – Mayor impacto en negocio</strong> · 2.427 URLs afectadas (representa el ~72% del total de URLs con problemas)
+  </div>
+  <table>
+    <thead><tr><th>Métrica</th><th>Valor (CrUX Móvil)</th><th>Umbral Bueno</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>LCP</td><td><strong style="color:#fc8181">4,4 s</strong></td><td>&lt; 2,5s</td><td><span class="badge badge-red">MALO</span></td></tr>
+      <tr><td>CLS</td><td><strong style="color:#fc8181">0,28</strong></td><td>&lt; 0,1</td><td><span class="badge badge-red">MALO</span></td></tr>
+      <tr><td>INP</td><td><strong style="color:#fbd38d">208 ms</strong></td><td>&lt; 200ms</td><td><span class="badge badge-orange">MEJORA</span></td></tr>
+    </tbody>
+  </table>
+  <p style="color:#a0aec0; font-size:0.9em; margin-top:8px;">URL ejemplo: <span class="url-pill">https://www.onedirect.es/productos/nureva-hdl310-blanco</span></p>
+
+  <!-- PÁGINAS DE CATEGORÍAS DE CONTENIDO / GUÍAS -->
+  <h3>📄 B. Páginas de Contenido / Guías (<code>/content/</code>)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO</strong> · 426-24 URLs afectadas según subgrupo
+  </div>
+  <table>
+    <thead><tr><th>URL Ejemplo</th><th>LCP</th><th>CLS</th><th>INP</th><th>URLs</th></tr></thead>
+    <tbody>
+      <tr><td><span class="url-pill">/content/videoconferencia/webcam/resolucion</span></td><td style="color:#fc8181">4,1s</td><td style="color:#fc8181">0,28</td><td style="color:#fbd38d">236ms</td><td>426</td></tr>
+      <tr><td><span class="url-pill">/content/guide/walkie-talkie-largo-alcance</span></td><td style="color:#fbd38d">–</td><td style="color:#fc8181">0,30</td><td style="color:#fbd38d">253ms</td><td>24</td></tr>
+      <tr><td><span class="url-pill">/content/top-10-mejores-moviles-resistentes</span></td><td style="color:#fbd38d">–</td><td style="color:#fbd38d">0,29</td><td style="color:#fbd38d">254ms</td><td>16</td></tr>
+    </tbody>
+  </table>
+
+  <!-- PÁGINAS DE CATEGORÍA -->
+  <h3>📂 C. Páginas de Categoría (<code>/walkie-talkie/</code>, <code>/telefonos-fijos/</code>, etc.)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO</strong> · 143-23 URLs afectadas por subgrupo
+  </div>
+  <table>
+    <thead><tr><th>URL Ejemplo</th><th>LCP</th><th>CLS</th><th>INP</th><th>URLs</th></tr></thead>
+    <tbody>
+      <tr><td><span class="url-pill">/walkie-talkie</span></td><td>–</td><td style="color:#fc8181">0,27</td><td style="color:#fbd38d">224ms</td><td>143</td></tr>
+      <tr><td><span class="url-pill">/telefonos-fijos/telefonos-fijos-con-tarjeta-sim</span></td><td style="color:#fc8181">4,6s</td><td style="color:#fc8181">0,26</td><td style="color:#fbd38d">272ms</td><td>23</td></tr>
+      <tr><td><span class="url-pill">/walkie-talkie/walkie-talkie-pmr-uso-libre</span></td><td style="color:#fc8181">4,2s</td><td style="color:#fbd38d">0,27</td><td style="color:#fbd38d">289ms</td><td>13</td></tr>
+    </tbody>
+  </table>
+
+  <!-- PÁGINAS DE MARCA -->
+  <h3>🏷️ D. Páginas de Marca (<code>/marcas/</code>)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO – LCP más alto detectado (6,3s)</strong> · 50 URLs afectadas
+  </div>
+  <table>
+    <thead><tr><th>URL Ejemplo</th><th>LCP (CrUX)</th><th>CLS (CrUX)</th><th>INP (CrUX)</th><th>URLs</th></tr></thead>
+    <tbody>
+      <tr><td><span class="url-pill">/marcas/poly</span></td><td style="color:#fc8181"><strong>6,3s ⚠️</strong></td><td style="color:#fc8181">0,28 (CrUX) / 0,37 GSC</td><td style="color:#fbd38d">237ms</td><td>50</td></tr>
+    </tbody>
+  </table>
+
+  <!-- HOMEPAGE -->
+  <h3>🏠 E. Homepage (<code>/</code>)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO – CLS más alto (0,42)</strong> · 48 URLs afectadas
+  </div>
+  <table>
+    <thead><tr><th>Métrica</th><th>Valor (CrUX Móvil)</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>LCP</td><td style="color:#fc8181">4,8 s</td><td><span class="badge badge-red">MALO</span></td></tr>
+      <tr><td>CLS</td><td style="color:#fc8181">0,42</td><td><span class="badge badge-red">MALO</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- TELEFONÍA MÓVIL -->
+  <h3>📱 F. Páginas de Telefonía Móvil (<code>/telefonia-movil/</code>)</h3>
+  <div class="alert alert-red">
+    <strong>🔴 CRÍTICO – INP más alto detectado (412ms)</strong> · 10 URLs afectadas
+  </div>
+  <table>
+    <thead><tr><th>URL Ejemplo</th><th>CLS</th><th>INP</th><th>LCP</th><th>URLs</th></tr></thead>
+    <tbody>
+      <tr><td><span class="url-pill">/telefonia-movil/moviles-smartphones/telefono-satelite</span></td><td style="color:#fbd38d">0,38</td><td style="color:#fc8181"><strong>412ms ⚠️</strong></td><td style="color:#fc8181">5,8s</td><td>10</td></tr>
+    </tbody>
+  </table>
+</div>
+<!-- PAGESPEED ANALYSIS -->
+<div class="section" id="pagespeed">
+  <h2>🔬 4. Análisis PageSpeed Insights – URL Más Afectada</h2>
+  <div class="alert alert-blue">
+    <strong>URL Analizada:</strong> <span class="url-pill">https://www.onedirect.es/marcas/poly</span><br>
+    <strong>Criterio de selección:</strong> Mayor LCP en CrUX (6,3s en GSC) + afecta a página de tipo "marca" con alta visibilidad. Análisis ejecutado: 24 Abril 2026, 9:47 CEST
+  </div>
+
+  <h3>📊 Métricas de Campo (CrUX – Usuarios Reales, Móvil)</h3>
+  <div class="kpi-grid">
+    <div class="kpi-card bad">
+      <div class="label">LCP</div>
+      <div class="metric">4,1 s</div>
+      <div class="sublabel">P75 · Malo (&gt;4s) · 26% usuarios en rojo</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="label">INP</div>
+      <div class="metric">237 ms</div>
+      <div class="sublabel">P75 · Necesita Mejora · 28% en naranja</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">CLS</div>
+      <div class="metric">0,28</div>
+      <div class="sublabel">P75 · Malo (&gt;0,25) · 29% en rojo</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">FCP</div>
+      <div class="metric">3,8 s</div>
+      <div class="sublabel">Malo (&gt;3s)</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">TTFB</div>
+      <div class="metric">3,5 s</div>
+      <div class="sublabel">Malo (&gt;1,8s) · Problema servidor</div>
+    </div>
+  </div>
+
+  <h3>🧪 Métricas de Laboratorio (Lighthouse – Moto G Power emulado, 4G lento)</h3>
+  <div class="kpi-grid">
+    <div class="kpi-card bad">
+      <div class="label">Score Rendimiento</div>
+      <div class="metric">25</div>
+      <div class="sublabel">Muy malo (0-49 = rojo)</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">LCP (Lab)</div>
+      <div class="metric">18,1 s</div>
+      <div class="sublabel">Condición: 4G lento simulado</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">TBT</div>
+      <div class="metric">3.110 ms</div>
+      <div class="sublabel">Total Blocking Time – crítico</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">FCP (Lab)</div>
+      <div class="metric">3,8 s</div>
+      <div class="sublabel">Primer Renderizado con Contenido</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="label">Speed Index</div>
+      <div class="metric">9,5 s</div>
+      <div class="sublabel">Velocidad de pintado visual</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="label">CLS (Lab)</div>
+      <div class="metric">0.123</div>
+      <div class="sublabel">Cambios de diseño acumulados</div>
+    </div>
+  </div>
+
+  <h3>🏋️ Trabajo del Hilo Principal</h3>
+  <table>
+    <thead><tr><th>Tarea</th><th>Duración</th><th>Impacto</th></tr></thead>
+    <tbody>
+      <tr><td>Script Evaluation (JS)</td><td style="color:#fc8181">6.097 ms</td><td>Bloquea renderizado y respuesta a interacciones</td></tr>
+      <tr><td>Style &amp; Layout</td><td style="color:#fbd38d">1.382 ms</td><td>Recálculos CSS y reflows</td></tr>
+      <tr><td>Other (sin categorizar)</td><td>1.314 ms</td><td>–</td></tr>
+      <tr><td>Script Parsing &amp; Compilation</td><td>964 ms</td><td>Coste de parsear JS</td></tr>
+      <tr><td>Garbage Collection</td><td>464 ms</td><td>Gestión de memoria ineficiente</td></tr>
+      <tr><td><strong>TOTAL Hilo Principal</strong></td><td><strong style="color:#fc8181">10,7 s</strong></td><td>Tiempo total de bloqueo del hilo</td></tr>
+    </tbody>
+  </table>
+
+  <h3>⚡ Top Oportunidades de Optimización (PageSpeed)</h3>
+  <table>
+    <thead><tr><th>Problema</th><th>Ahorro Estimado</th><th>Prioridad</th></tr></thead>
+    <tbody>
+      <tr><td>JavaScript no utilizado (bundle-common.min.js, LiveChat, SST, etc.)</td><td style="color:#fc8181">1.493 KiB</td><td><span class="badge badge-red">CRÍTICO</span></td></tr>
+      <tr><td>Imágenes no optimizadas (formato/tamaño)</td><td style="color:#fbd38d">698 KiB</td><td><span class="badge badge-red">CRÍTICO</span></td></tr>
+      <tr><td>CSS no utilizado (styles-m.css)</td><td style="color:#fbd38d">96 KiB</td><td><span class="badge badge-orange">ALTO</span></td></tr>
+      <tr><td>Recursos que bloquean el renderizado (styles-m.css + Google Fonts)</td><td style="color:#fbd38d">450 ms</td><td><span class="badge badge-orange">ALTO</span></td></tr>
+      <tr><td>TTL de caché insuficiente (OneTrust, LiveChat, Bing)</td><td style="color:#fbd38d">111 KiB</td><td><span class="badge badge-orange">ALTO</span></td></tr>
+      <tr><td>Preconnect pendiente (piwik.pro, sst.onedirect.es)</td><td style="color:#fbd38d">350-300 ms LCP</td><td><span class="badge badge-blue">MEDIO</span></td></tr>
+      <tr><td>Redistribución forzada jQuery (forced reflow)</td><td>185-261 ms</td><td><span class="badge badge-blue">MEDIO</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>🖼️ Causas del CLS (Cambios de Diseño)</h3>
+  <table>
+    <thead><tr><th>Elemento</th><th>Puntuación CLS</th><th>Causa</th></tr></thead>
+    <tbody>
+      <tr><td><code>div.brand-box-v &gt; div.bg-light &gt; div.row &gt; div.col-lg-7</code></td><td style="color:#fc8181">0,123</td><td>Imagen sin dimensiones declaradas + carga tardía desplaza contenido</td></tr>
+      <tr><td><code>img.img-fluid</code> (poly-lifestyle.webp)</td><td style="color:#fbd38d">0,064</td><td>Elemento de imagen sin atributos width/height</td></tr>
+      <tr><td><code>div.header &gt; div.switcher</code></td><td>0,000</td><td>Menor impacto</td></tr>
+    </tbody>
+  </table>
+
+  <h3>🐌 Fuentes de JS con Mayor Tiempo de Ejecución</h3>
+  <table>
+    <thead><tr><th>Script</th><th>CPU Total</th><th>Evaluación JS</th><th>Tipo</th></tr></thead>
+    <tbody>
+      <tr><td><code>requirejs/require.min.js</code></td><td style="color:#fc8181">3.419 ms</td><td>2.660 ms</td><td><span class="badge badge-red">Propio Magento</span></td></tr>
+      <tr><td>LiveChat chunks (4 archivos)</td><td style="color:#fc8181">1.962 ms</td><td>1.538 ms</td><td><span class="badge badge-orange">Terceros</span></td></tr>
+      <tr><td><code>sst.onedirect.es</code> scripts</td><td style="color:#fbd38d">688-565 ms</td><td>439-532 ms</td><td><span class="badge badge-orange">Terceros</span></td></tr>
+      <tr><td><code>bundle-common.min.js</code> (Magepack)</td><td>278 ms</td><td>50 ms</td><td><span class="badge badge-red">Propio Magento</span></td></tr>
+      <tr><td>OneTrust Banner SDK</td><td>283 ms</td><td>168 ms</td><td><span class="badge badge-orange">Terceros</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>🔗 LCP Breakdown – Desglose de Retardo</h3>
+  <div class="alert alert-red">
+    <strong>Retraso de renderizado de elementos: 5.580 ms</strong> – El elemento LCP (contenido de OneTrust / contenido de página) tarda 5,58 segundos en poder empezar a renderizarse debido al bloqueo de scripts. El TTFB del documento inicial es 0ms (probablemente cacheado), pero el bloqueo es por JS de terceros y propios.
+  </div>
+
+  <h3>🔑 JS con Más Código Sin Usar</h3>
+  <table>
+    <thead><tr><th>Archivo</th><th>Tamaño Total</th><th>Código No Usado</th></tr></thead>
+    <tbody>
+      <tr><td><code>magepack/bundle-common.min.js</code></td><td>1.562 KB</td><td style="color:#fc8181">1.045 KB (67%)</td></tr>
+      <tr><td><code>sst.onedirect.es scripts</code></td><td>~461 KB</td><td style="color:#fbd38d">~233 KB (51%)</td></tr>
+      <tr><td>LiveChat chunks</td><td>196 KB</td><td style="color:#fbd38d">114 KB (58%)</td></tr>
+      <tr><td>OneTrust SDK</td><td>106 KB</td><td>56 KB (53%)</td></tr>
+    </tbody>
+  </table>
+</div>
+<!-- PROBLEMAS Y SOLUCIONES -->
+<div class="section" id="problemas">
+  <h2>🔧 5. Problemas Detectados y Soluciones (How-To para Desarrolladores)</h2>
+
+  <!-- PROBLEMA 1: LCP -->
+  <h3>🔴 PROBLEMA 1: LCP Crítico – Largest Contentful Paint &gt; 4s (Móvil)</h3>
+  <div class="summary-box">
+    <p><strong style="color:#fc8181">Impacto:</strong> 2.997+ URLs con LCP malo. El elemento LCP principal tarda hasta 18s en laboratorio.</p>
+    <p><strong>URLs más afectadas:</strong> /marcas/poly (6,3s CrUX), /productos/* (4,4s), / homepage (4,8s)</p>
+    <p><strong>Causa raíz:</strong> TTFB de 3,5s + CSS y JS bloqueantes + imágenes no optimizadas + sin preload de elemento LCP</p>
+  </div>
+
+  <h4>✅ Solución 1.1: Reducir TTFB – Mejorar tiempo de respuesta del servidor</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Implementar Full Page Cache (FPC) agresivo en Magento</strong><p>En el admin de Magento: Stores → Configuration → Advanced → System → Full Page Cache. Activar Varnish Cache. Asegurarse de que las páginas de categoría y producto tengan un TTL mínimo de 3600s.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Configurar Varnish/CDN correctamente</strong><p>Verificar que las cabeceras <code>Cache-Control</code> sean correctas. El TTFB de 3,5s indica que muchas peticiones no están siendo servidas desde caché. Revisar las exclusiones de Varnish (cookies de sesión que invalidan la caché).</p><pre># En Varnish VCL, verificar que páginas de categoría no sean invalidadas innecesariamente
+sub vcl_recv {
+  if (req.url ~ "^/(productos|marcas|walkie-talkie|telefonos)" && !req.http.Cookie ~ "X-Magento-Cache-Debug") {
+    unset req.http.Cookie;
+  }
+}</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Usar un CDN con edge locations en España/Europa</strong><p>Si no hay CDN: implementar Cloudflare (plan gratuito/Pro) o AWS CloudFront. El objetivo es servir HTML desde ubicaciones cercanas al usuario y cachear assets estáticos con TTL largo.</p></div></div>
+
+  <h4>✅ Solución 1.2: Eliminar CSS bloqueante del renderizado</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Detectar CSS crítico (above-the-fold)</strong><p>El archivo <code>styles-m.css</code> (87KB) bloquea 1.350ms el renderizado. Extraer el CSS crítico (above the fold) e insertarlo inline en el <code>&lt;head&gt;</code>.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Cargar el CSS no crítico de forma asíncrona en Magento 2</strong><pre>&lt;!-- En layout XML del tema (default_head_blocks.xml) --&gt;
+&lt;head&gt;
+  &lt;css src="css/styles-critical.css" /&gt;
+  &lt;link rel="preload" as="style" href="css/styles-m.css" 
+        onload="this.rel='stylesheet'" /&gt;
+  &lt;noscript&gt;&lt;link rel="stylesheet" href="css/styles-m.css" /&gt;&lt;/noscript&gt;
+&lt;/head&gt;</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Eliminar CSS no utilizado (96KB de ahorro)</strong><p>Usar PurgeCSS o herramientas similares para identificar y eliminar reglas CSS no utilizadas en <code>styles-m.css</code>. El 93% del archivo es código no usado en la mayoría de páginas.</p><pre># Instalar PurgeCSS como dependencia de desarrollo
+npm install --save-dev @fullhuman/postcss-purgecss
+
+# Configurar en postcss.config.js
+module.exports = {
+  plugins: [
+    require('@fullhuman/postcss-purgecss')({
+      content: ['./app/design/**/*.phtml', './app/design/**/*.html'],
+      safelist: [/^slick-/, /^owl-/, /^mage-/]
+    })
+  ]
+}</pre></div></div>
+
+  <h4>✅ Solución 1.3: Preload del elemento LCP (imagen principal)</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Identificar el elemento LCP en cada tipo de página</strong><p>En páginas de producto y marca, el LCP suele ser la imagen principal del producto o el hero banner. Verificar con Chrome DevTools → Performance → LCP Element.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Agregar rel="preload" para la imagen LCP</strong><pre>&lt;!-- En el layout XML o en el bloque head de Magento 2 --&gt;
+&lt;link rel="preload" as="image" 
+      href="/media/catalog/product/cache/[hash]/imagen-lcp.jpg"
+      fetchpriority="high" /&gt;
+
+&lt;!-- O directamente en la imagen HTML --&gt;
+&lt;img src="imagen-lcp.jpg" 
+     fetchpriority="high" 
+     loading="eager"
+     width="800" height="800"
+     alt="Descripción producto" /&gt;</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>En Magento 2: modificar el bloque de imagen de producto</strong><p>En el archivo <code>Magento_Catalog/templates/product/image_with_borders.phtml</code> o similar, agregar <code>fetchpriority="high"</code> y <code>loading="eager"</code> a la imagen principal (la primera imagen visible).</p></div></div>
+
+  <!-- PROBLEMA 2: CLS -->
+  <h3>🔴 PROBLEMA 2: CLS Crítico – Cumulative Layout Shift &gt; 0,25 (Móvil)</h3>
+  <div class="summary-box">
+    <p><strong style="color:#fc8181">Impacto:</strong> 3.180 URLs con CLS malo. Homepage con CLS de 0,42 (muy crítico). El mayor causante es una imagen sin dimensiones.</p>
+    <p><strong>Elemento causante principal:</strong> <code>img.img-fluid</code> (imágenes de categorías y marca sin width/height declarados)</p>
+  </div>
+
+  <h4>✅ Solución 2.1: Declarar dimensiones explícitas en todas las imágenes</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Regla global CSS para reservar espacio en imágenes</strong><pre>/* En styles-m.css o styles-critical.css */
+img {
+  width: 100%;
+  height: auto;
+}
+
+/* Para imágenes de producto en listados */
+.product-image-wrapper {
+  position: relative;
+  padding-bottom: 100%; /* Ratio 1:1 para imágenes cuadradas */
+  overflow: hidden;
+}
+.product-image-photo {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}</pre></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Agregar width y height a todas las imágenes en templates Magento</strong><p>En todos los archivos <code>.phtml</code> de templates de imágenes, asegurarse de que el tag <code>&lt;img&gt;</code> incluya los atributos <code>width</code> y <code>height</code>:</p><pre>&lt;!-- ANTES (incorrecto) --&gt;
+&lt;img class="img-fluid" src="<?= $block->getImageUrl() ?>" alt="..." /&gt;
+
+&lt;!-- DESPUÉS (correcto) --&gt;
+&lt;img class="img-fluid" 
+     src="<?= $block->getImageUrl() ?>" 
+     alt="..."
+     width="<?= $block->getWidth() ?>"
+     height="<?= $block->getHeight() ?>" /&gt;</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Corregir específicamente la imagen de hero en páginas de marca</strong><p>El elemento causante principal es <code>&lt;img class="img-fluid rounded-lg" src="/media/upload_img/common/brand/poly-lifestyle.webp"&gt;</code>. Debe tener dimensiones explícitas:</p><pre>&lt;img class="img-fluid rounded-lg" 
+     src="/media/upload_img/common/brand/poly-lifestyle.webp"
+     alt="Poly" 
+     width="435" height="300"
+     loading="lazy" /&gt;</pre></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Revisar el header/switcher de idioma</strong><p>El <code>div.header &gt; div.switcher</code> también causa pequeños CLS. Verificar que tenga altura reservada con CSS y no cambie de tamaño al cargar.</p></div></div>
+
+  <h4>✅ Solución 2.2: Fuentes web sin FOUT (Flash Of Unstyled Text)</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Precargar fuente Mulish y usar font-display: optional</strong><pre>&lt;!-- En el head del HTML o layout XML de Magento --&gt;
+&lt;link rel="preload" as="font" type="font/woff2"
+      href="https://fonts.gstatic.com/s/mulish/v18/1Ptvg83HX_SGhgqk3wotYKNnBQ.woff2"
+      crossorigin="anonymous" /&gt;
+
+&lt;!-- En CSS --&gt;
+@font-face {
+  font-family: 'Mulish';
+  font-display: optional; /* Evita CLS por FOUT */
+  src: url('...woff2') format('woff2');
+}</pre></div></div>
+
+  <!-- PROBLEMA 3: INP -->
+  <h3>🟠 PROBLEMA 3: INP Alto – Interaction to Next Paint &gt; 200ms (Móvil)</h3>
+  <div class="summary-box">
+    <p><strong style="color:#fbd38d">Impacto:</strong> 3.082 URLs con INP que necesita mejora. Páginas de telefonía móvil con INP de 412ms (crítico).</p>
+    <p><strong>Causa raíz:</strong> Hilo principal bloqueado 10,7s total · RequireJS eval: 3.419ms · LiveChat: 1.962ms · SST scripts: 688ms</p>
+  </div>
+
+  <h4>✅ Solución 3.1: Reducir JavaScript que bloquea el hilo principal</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Auditar y diferir scripts de terceros no críticos</strong><p>LiveChat, OneTrust, Bing Ads, Piwik Pro y scripts SST suman más de 4.000ms de CPU. Cargarlos de forma diferida con <code>async</code>/<code>defer</code> o mediante Intersection Observer cuando el usuario hace scroll.</p><pre>&lt;!-- Cargar LiveChat solo cuando el usuario interactúa --&gt;
+&lt;script&gt;
+document.addEventListener('DOMContentLoaded', function() {
+  // Diferir LiveChat 3 segundos o hasta primera interacción
+  let loaded = false;
+  const loadLiveChat = () => {
+    if (loaded) return;
+    loaded = true;
+    const s = document.createElement('script');
+    s.src = 'https://cdn.livechatinc.com/tracking.js';
+    s.async = true;
+    document.head.appendChild(s);
+  };
+  
+  setTimeout(loadLiveChat, 3000);
+  document.addEventListener('mousemove', loadLiveChat, {once: true});
+  document.addEventListener('touchstart', loadLiveChat, {once: true});
+  document.addEventListener('keydown', loadLiveChat, {once: true});
+});
+&lt;/script&gt;</pre></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Optimizar RequireJS en Magento 2 – Migrar a módulos ES6 o mejorar bundling</strong><p>RequireJS está usando 3.419ms de CPU. Esto indica que el bundle de Magepack no está correctamente configurado o hay demasiados módulos cargándose en el critical path.</p><pre># Regenerar bundles de Magepack con configuración optimizada
+php bin/magento setup:static-content:deploy es_ES -f
+php bin/magento cache:clean
+
+# Verificar configuración de magepack en magepack.config.js
+# Asegurarse de que bundle-common solo incluye módulos realmente comunes</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Corregir forced reflows de jQuery</strong><p>jQuery está causando 185-261ms de redistribución forzada. Esto ocurre cuando JS lee propiedades geométricas (offsetWidth, getBoundingClientRect) y luego modifica el DOM, forzando al navegador a recalcular el layout.</p><pre>// MALO: Leer y escribir DOM alternadamente (forced reflow)
+elements.forEach(el => {
+  const height = el.offsetHeight; // Lee → fuerza reflow
+  el.style.height = height + 'px'; // Escribe
+});
+
+// CORRECTO: Agrupar lecturas primero, luego escrituras
+const heights = Array.from(elements).map(el => el.offsetHeight); // Lee todo
+elements.forEach((el, i) => {
+  el.style.height = heights[i] + 'px'; // Escribe todo
+});</pre></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Implementar web workers para tareas pesadas de JS</strong><p>Mover lógica de procesamiento no relacionada con el DOM a Web Workers para liberar el hilo principal.</p></div></div>
+
+  <!-- PROBLEMA 4: JS y Recursos -->
+  <h3>🟠 PROBLEMA 4: Exceso de JavaScript – 1.493 KiB Sin Usar</h3>
+  <div class="summary-box">
+    <p><strong>Causa:</strong> El bundle <code>bundle-common.min.js</code> de Magepack pesa 1.562KB de los cuales 1.045KB (67%) no se usa en la página de marca.</p>
+  </div>
+
+  <h4>✅ Solución 4.1: Reconfigurar Magepack para bundling más granular</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Crear bundles específicos por tipo de página</strong><pre># Estructura recomendada de bundles en magepack.config.js
+module.exports = {
+  bundleConfig: {
+    // Bundle común (solo módulos usados en TODAS las páginas)
+    common: {
+      // Solo incluir módulos absolutamente necesarios
+    },
+    // Bundle para páginas de categoría/marca
+    category: {
+      // Módulos específicos de listados
+    },
+    // Bundle para páginas de producto
+    product: {
+      // Módulos específicos de producto
+    },
+    // Bundle para homepage
+    cms: {
+      // Módulos específicos de CMS
+    }
+  }
+};</pre></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Revisar módulos de Magento 2 cargados innecesariamente</strong><p>Ejecutar un análisis de dependencias con RequireJS para identificar módulos que se cargan en el bundle común pero solo se usan en páginas específicas (checkout, customer account, etc.).</p><pre># Analizar qué módulos se cargan en qué páginas
+# En dev, activar logging de RequireJS:
+require.config({
+  waitSeconds: 0,
+  config: { mixins: { debug: true } }
+});
+
+# Después analizar network tab en Chrome DevTools</pre></div></div>
+
+  <!-- PROBLEMA 5: Imágenes -->
+  <h3>🟠 PROBLEMA 5: Imágenes No Optimizadas – 698 KiB de Ahorro</h3>
+  <div class="summary-box">
+    <p><strong>Causas:</strong> (1) Imágenes JPEG/PNG en lugar de WebP/AVIF. (2) Imágenes de 800x800px servidas a 100-150px de display. (3) Sin responsive images con srcset.</p>
+  </div>
+
+  <h4>✅ Solución 5.1: Convertir imágenes a WebP/AVIF en Magento 2</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Instalar extensión de optimización de imágenes o configurar el procesado en el servidor</strong><pre># Opción 1: Usar el módulo de Magento 2 para WebP (disponible desde Magento 2.4.x)
+# Verificar en vendor/magento/module-catalog/etc/config.xml que WebP está habilitado
+
+# Opción 2: Configurar Nginx para servir WebP automáticamente
+# En nginx.conf:
+location ~* .(jpg|jpeg|png)$ {
+    set $webp_suffix "";
+    if ($http_accept ~* "webp") {
+        set $webp_suffix ".webp";
+    }
+    if (-f "$request_filename$webp_suffix") {
+        rewrite (.*) $1$webp_suffix break;
+    }
+}</pre></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Implementar responsive images con srcset en los templates de Magento</strong><pre>&lt;!-- En Magento_Catalog/templates/product/list/item.phtml --&gt;
+&lt;img
+  src="<?= $block->getImageUrl('category_page_list', $product) ?>"
+  srcset="
+    <?= $block->getImageUrl('category_page_list_small', $product) ?> 300w,
+    <?= $block->getImageUrl('category_page_list', $product) ?> 600w,
+    <?= $block->getImageUrl('category_page_list_large', $product) ?> 1200w"
+  sizes="(max-width: 768px) 150px, (max-width: 1024px) 200px, 264px"
+  width="264" height="264"
+  loading="lazy"
+  alt="<?= $escaper->escapeHtmlAttr($product->getName()) ?>" /&gt;</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Configurar tamaños de imagen correctos en Magento</strong><p>En <code>Stores → Configuration → Advanced → Catalog → Product Image Settings</code>, ajustar los tamaños de caché de imágenes para que coincidan con las dimensiones reales de display:</p><pre># En view.xml del tema (app/design/frontend/Onedirect/indigo/etc/view.xml)
+&lt;image id="category_page_list" type="small_image"&gt;
+  &lt;width&gt;264&lt;/width&gt;
+  &lt;height&gt;264&lt;/height&gt;
+&lt;/image&gt;
+
+# Regenerar imágenes tras cambiar tamaños:
+php bin/magento catalog:images:resize</pre></div></div>
+
+  <!-- PROBLEMA 6: TTFB y Servidor -->
+  <h3>🔴 PROBLEMA 6: TTFB Crítico – 3,5 segundos</h3>
+  <div class="summary-box">
+    <p><strong>Impacto:</strong> TTFB de 3,5s afecta directamente al LCP y FCP. El objetivo es &lt;0,8s (bueno) o al menos &lt;1,8s.</p>
+    <p><strong>Causa probable:</strong> PHP lento, Magento sin caché de opcode, consultas DB no optimizadas, o FPC no funcionando correctamente.</p>
+  </div>
+
+  <h4>✅ Solución 6.1: Optimizar la pila PHP/MySQL de Magento</h4>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Verificar y optimizar OPCache de PHP</strong><pre># En php.ini:
+opcache.enable=1
+opcache.memory_consumption=512
+opcache.interned_strings_buffer=64
+opcache.max_accelerated_files=60000
+opcache.revalidate_freq=2
+opcache.save_comments=1
+opcache.enable_cli=1</pre></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Activar Redis para caché de sesiones y caché de configuración</strong><pre># app/etc/env.php - Configurar Redis para caché
+'session' => [
+  'save' => 'redis',
+  'redis' => [
+    'host' => '127.0.0.1',
+    'port' => '6379',
+    'password' => '',
+    'timeout' => '2.5',
+    'persistent_identifier' => '',
+    'database' => '2',
+    'compression_threshold' => '2048',
+    'compression_library' => 'gzip',
+  ]
+],
+'cache' => [
+  'frontend' => [
+    'default' => ['backend' => 'MagentoFrameworkCacheBackendRedis', ...],
+    'page_cache' => ['backend' => 'MagentoFrameworkCacheBackendRedis', ...]
+  ]
+]</pre></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Implementar Elasticsearch/OpenSearch correctamente</strong><p>Para búsquedas y filtros de categoría, Elasticsearch mal configurado puede ser causa de TTFB alto en páginas de listado. Verificar que las consultas de catálogo usen el índice de ES y no consultas directas a MySQL.</p></div></div>
+</div>
+<!-- ROADMAP -->
+<div class="section" id="roadmap">
+  <h2>🗓️ 6. Roadmap de Implementación – Priorización</h2>
+  <p style="color:#a0aec0; margin-bottom:20px;">Ordenado por impacto en CWV vs esfuerzo de implementación. Se recomienda ejecutar en sprints de 2 semanas.</p>
+
+  <h3>🔴 Sprint 1 – QUICK WINS (Semana 1-2) · Impacto inmediato en CLS y LCP</h3>
+  <table>
+    <thead><tr><th>#</th><th>Acción</th><th>Métrica</th><th>Esfuerzo</th><th>Impacto</th></tr></thead>
+    <tbody>
+      <tr><td>1.1</td><td>Añadir <code>width</code> y <code>height</code> a TODAS las imágenes en templates .phtml</td><td><span class="badge badge-red">CLS</span></td><td>Bajo (1-2 días)</td><td>🔴 Crítico – resuelve CLS en 3.180+ URLs</td></tr>
+      <tr><td>1.2</td><td>Agregar <code>fetchpriority="high"</code> y <code>loading="eager"</code> a imagen LCP</td><td><span class="badge badge-red">LCP</span></td><td>Bajo (&lt;1 día)</td><td>🔴 Crítico – mejora LCP inmediatamente</td></tr>
+      <tr><td>1.3</td><td>Diferir carga de LiveChat hasta primera interacción del usuario</td><td><span class="badge badge-orange">INP/TBT</span></td><td>Bajo (1 día)</td><td>🟠 Alto – libera ~2s de hilo principal</td></tr>
+      <tr><td>1.4</td><td>Agregar <code>rel="preconnect"</code> para <code>piwik.pro</code> y <code>sst.onedirect.es</code></td><td><span class="badge badge-red">LCP</span></td><td>Muy Bajo (&lt;2h)</td><td>🟠 Alto – ahorro 300-350ms en LCP</td></tr>
+      <tr><td>1.5</td><td>Cambiar <code>font-display: swap</code> a <code>optional</code> para fuente Mulish</td><td><span class="badge badge-red">CLS</span></td><td>Muy Bajo (&lt;2h)</td><td>🟠 Medio – elimina CLS por FOUT</td></tr>
+    </tbody>
+  </table>
+
+  <h3>🟠 Sprint 2 – OPTIMIZACIONES CORE (Semana 3-4) · Impacto en LCP e INP</h3>
+  <table>
+    <thead><tr><th>#</th><th>Acción</th><th>Métrica</th><th>Esfuerzo</th><th>Impacto</th></tr></thead>
+    <tbody>
+      <tr><td>2.1</td><td>Convertir imágenes de producto a WebP/AVIF (configurar Nginx o módulo Magento)</td><td><span class="badge badge-red">LCP/FCP</span></td><td>Medio (3-4 días)</td><td>🔴 Crítico – ahorro 698KB por página</td></tr>
+      <tr><td>2.2</td><td>Implementar CSS crítico inline + cargar styles-m.css de forma asíncrona</td><td><span class="badge badge-red">LCP/FCP</span></td><td>Medio (2-3 días)</td><td>🔴 Crítico – elimina 1.350ms de bloqueo</td></tr>
+      <tr><td>2.3</td><td>Auditar y limpiar CSS no usado de styles-m.css (PurgeCSS)</td><td><span class="badge badge-red">LCP/FCP</span></td><td>Medio (2-3 días)</td><td>🟠 Alto – ahorro 96KB (93% del archivo)</td></tr>
+      <tr><td>2.4</td><td>Implementar responsive images con srcset en listados y páginas de marca</td><td><span class="badge badge-red">LCP</span></td><td>Medio (3 días)</td><td>🟠 Alto – reduce tamaño de imagen up to 80%</td></tr>
+    </tbody>
+  </table>
+
+  <h3>🟡 Sprint 3 – INFRAESTRUCTURA Y JS (Semana 5-8) · Impacto en TTFB e INP</h3>
+  <table>
+    <thead><tr><th>#</th><th>Acción</th><th>Métrica</th><th>Esfuerzo</th><th>Impacto</th></tr></thead>
+    <tbody>
+      <tr><td>3.1</td><td>Reconfigurar Magepack con bundles granulares por tipo de página</td><td><span class="badge badge-orange">INP/LCP</span></td><td>Alto (1 semana)</td><td>🔴 Crítico – elimina 1.045KB JS no usado</td></tr>
+      <tr><td>3.2</td><td>Optimizar FPC Varnish para reducir TTFB a &lt;800ms</td><td><span class="badge badge-red">LCP/FCP</span></td><td>Alto (1 semana)</td><td>🔴 Crítico – TTFB actual 3,5s</td></tr>
+      <tr><td>3.3</td><td>Auditar y corregir forced reflows en jQuery (layoutThrashing)</td><td><span class="badge badge-orange">INP</span></td><td>Medio (3-4 días)</td><td>🟠 Alto – elimina 185-261ms de bloqueo</td></tr>
+      <tr><td>3.4</td><td>Implementar Redis para caché y optimizar OPCache PHP</td><td><span class="badge badge-red">TTFB</span></td><td>Medio (2-3 días)</td><td>🟠 Alto – impacto directo en TTFB</td></tr>
+      <tr><td>3.5</td><td>Revisar configuración de TTL de caché HTTP para recursos de terceros</td><td><span class="badge badge-orange">Performance</span></td><td>Bajo (1 día)</td><td>🟡 Medio – ahorro 111KB en revisitas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>📊 Objetivos de Métricas Post-Optimización</h3>
+  <table>
+    <thead><tr><th>Métrica</th><th>Valor Actual (CrUX)</th><th>Objetivo Fase 1</th><th>Objetivo Final</th></tr></thead>
+    <tbody>
+      <tr><td>LCP Móvil (P75)</td><td style="color:#fc8181">4,1 - 6,3 s</td><td style="color:#fbd38d">&lt; 4,0 s</td><td style="color:#68d391">&lt; 2,5 s</td></tr>
+      <tr><td>CLS Móvil (P75)</td><td style="color:#fc8181">0,28 - 0,42</td><td style="color:#fbd38d">&lt; 0,25</td><td style="color:#68d391">&lt; 0,1</td></tr>
+      <tr><td>INP Móvil (P75)</td><td style="color:#fbd38d">208 - 412 ms</td><td style="color:#fbd38d">&lt; 300 ms</td><td style="color:#68d391">&lt; 200 ms</td></tr>
+      <tr><td>TTFB</td><td style="color:#fc8181">3,5 s</td><td style="color:#fbd38d">&lt; 1,8 s</td><td style="color:#68d391">&lt; 0,8 s</td></tr>
+      <tr><td>Score PageSpeed Móvil</td><td style="color:#fc8181">25/100</td><td style="color:#fbd38d">&gt; 50</td><td style="color:#68d391">&gt; 75</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <p>📊 Informe generado automáticamente · Onedirect.es WPO Analysis · Abril 2026</p>
+  <p style="margin-top:8px;">Datos: Google Search Console + PageSpeed Insights (Lighthouse 13.0.1) · Herramienta: Claude AI (Anthropic)</p>
+  <p style="margin-top:8px; font-size:0.8em;">⚠️ Los valores de laboratorio (Lighthouse) difieren de los datos de campo (CrUX) ya que simulan condiciones específicas de red y dispositivo. Ambos son complementarios para el diagnóstico.</p>
+</div>
+
+</div>
+</body>
+</html>
